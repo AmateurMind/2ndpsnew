@@ -112,6 +112,17 @@ const AdminInternships = () => {
     }
   };
 
+  const toggleStatus = async (i) => {
+    try {
+      const newStatus = i.status === 'active' ? 'inactive' : 'active';
+      await axios.put(`/internships/${i.id}`, { status: newStatus });
+      toast.success(`Internship ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
+      await fetchInternships();
+    } catch (e) {
+      toast.error('Failed to toggle status');
+    }
+  };
+
   const confirmDelete = async (id) => {
     if (!window.confirm('Delete this internship?')) return;
     try {
@@ -161,6 +172,11 @@ const AdminInternships = () => {
               <p className="flex items-center"><Clock className="h-4 w-4 mr-1" />{i.duration}</p>
             </div>
             <div className="mt-3">
+              <div className="flex flex-wrap gap-1 mb-2">
+                <span className={`px-2 py-0.5 rounded-full text-xs ${i.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-secondary-100 text-secondary-700'}`}>
+                  {i.status || 'active'}
+                </span>
+              </div>
               <div className="flex flex-wrap gap-1">
                 {(i.requiredSkills || []).slice(0,4).map((s) => (
                   <span key={s} className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full text-xs">{s}</span>
@@ -178,6 +194,9 @@ const AdminInternships = () => {
             <div className="flex gap-2 mt-4">
               <button onClick={() => openEdit(i)} className="btn-outline flex-1 flex items-center justify-center">
                 <Pencil className="h-4 w-4 mr-1" /> Edit
+              </button>
+              <button onClick={() => toggleStatus(i)} className="btn-primary flex-1 flex items-center justify-center">
+                {i.status === 'active' ? 'Deactivate' : 'Activate'}
               </button>
               <button onClick={() => confirmDelete(i.id)} className="btn-danger flex-1 flex items-center justify-center">
                 <Trash2 className="h-4 w-4 mr-1" /> Delete

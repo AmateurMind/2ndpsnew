@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { Calendar, Building, Filter, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Calendar, Building, Filter, FileText, Download, Check } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import StatusBadge from '../../components/StatusBadge';
 
 const statuses = [
   'applied',
@@ -41,6 +43,68 @@ const AdminApplications = () => {
     });
   }, [applications, filters]);
 
+  const updateStatus = async (id, status) => {
+    try {
+      await axios.put(`/applications/${id}/status`, { status });
+      toast.success('Status updated');
+      await fetchApps();
+    } catch (e) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = ['Application ID','Student Name','Student Email','Department','Internship','Company','Status','Applied At'];
+    const rows = filtered.map(app => [
+      app.id,
+      app.student?.name || '',
+      app.student?.email || '',
+      app.student?.department || '',
+      app.internship?.title || '',
+      app.internship?.company || '',
+      app.status,
+      new Date(app.appliedAt).toISOString()
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(field => {
+      const s = String(field ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `applications_export_${Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('CSV exported');
+  };
+
+  const exportJSON = () => {
+    try {
+      const data = filtered.map((app) => ({
+        id: app.id,
+        student: app.student,
+        internship: app.internship,
+        status: app.status,
+        appliedAt: app.appliedAt
+      }));
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `applications_${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('JSON exported');
+    } catch (e) {
+      toast.error('Export failed');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -55,6 +119,14 @@ const AdminApplications = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-secondary-900">All Applications</h1>
+        <div className="flex gap-2">
+          <button onClick={exportCSV} className="btn-outline flex items-center justify-center">
+          <Download className="h-4 w-4 mr-2"/> Export CSV
+          </button>
+          <button onClick={exportJSON} className="btn-outline flex items-center justify-center">
+            <FileText className="h-4 w-4 mr-2"/> Export JSON
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -107,9 +179,17 @@ const AdminApplications = () => {
                 <td className="py-2">{app.internship?.title || '-'}</td>
                 <td className="py-2">{app.internship?.company || '-'}</td>
                 <td className="py-2">
-                  <span className="px-2 py-1 bg-secondary-100 text-secondary-700 rounded-full text-xs">
-                    {app.status.replace(/_/g,' ')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="input-field py-1 text-xs w-40"
+                      value={app.status}
+                      onChange={(e)=>updateStatus(app.id, e.target.value)}
+                    >
+                      {statuses.map(s => (
+                        <option key={s} value={s}>{s.replace(/_/g,' ')}</option>
+                      ))}
+                    </select>
+                  </div>
                 </td>
                 <td className="py-2">{new Date(app.appliedAt).toLocaleDateString()}</td>
                 <td className="py-2">
@@ -138,6 +218,18 @@ const AdminApplications = () => {
             {app.student?.resumeLink && (
               <a href={app.student.resumeLink} target="_blank" rel="noreferrer" className="btn-outline mt-3 text-xs">View Resume</a>
             )}
+            <div className="mt-3">
+              <label className="text-xs font-medium">Update Status</label>
+              <select
+                className="input-field py-1 text-xs mt-1"
+                value={app.status}
+                onChange={(e)=>updateStatus(app.id, e.target.value)}
+              >
+                {statuses.map(s => (
+                  <option key={s} value={s}>{s.replace(/_/g,' ')}</option>
+                ))}
+              </select>
+            </div>
           </div>
         ))}
       </div>

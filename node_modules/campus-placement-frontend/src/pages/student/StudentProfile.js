@@ -19,12 +19,18 @@ const StudentProfile = () => {
 
   const save = async (e) => {
     e.preventDefault();
+    const semesterNum = Number(form.semester);
+    const cgpaNum = Number(form.cgpa);
+    if (!form.name.trim()) { toast.error('Name is required'); return; }
+    if (!form.department.trim()) { toast.error('Department is required'); return; }
+    if (Number.isNaN(semesterNum) || semesterNum < 1 || semesterNum > 8) { toast.error('Semester must be between 1 and 8'); return; }
+    if (Number.isNaN(cgpaNum) || cgpaNum < 0 || cgpaNum > 10) { toast.error('CGPA must be between 0 and 10'); return; }
     try {
       const payload = {
         name: form.name,
         department: form.department,
-        semester: Number(form.semester),
-        cgpa: Number(form.cgpa),
+        semester: semesterNum,
+        cgpa: cgpaNum,
         skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
         resumeLink: form.resumeLink,
         phone: form.phone,
@@ -69,8 +75,8 @@ const StudentProfile = () => {
           <form onSubmit={save} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Name" value={form.name} onChange={(v)=>setForm({...form,name:v})} />
             <Input label="Department" value={form.department} onChange={(v)=>setForm({...form,department:v})} />
-            <Input label="Semester" type="number" value={form.semester} onChange={(v)=>setForm({...form,semester:v})} />
-            <Input label="CGPA" type="number" step="0.1" value={form.cgpa} onChange={(v)=>setForm({...form,cgpa:v})} />
+            <Input label="Semester" type="number" min={1} max={8} value={form.semester} onChange={(v)=>setForm({...form,semester:v})} />
+            <Input label="CGPA" type="number" step="0.1" min={0} max={10} value={form.cgpa} onChange={(v)=>setForm({...form,cgpa:v})} />
             <Input label="Phone" value={form.phone} onChange={(v)=>setForm({...form,phone:v})} />
             <Input label="Address" value={form.address} onChange={(v)=>setForm({...form,address:v})} />
             <Input label="Resume Link" value={form.resumeLink} onChange={(v)=>setForm({...form,resumeLink:v})} className="sm:col-span-2" />
@@ -100,10 +106,10 @@ const Field = ({ label, value, isLink }) => (
   </div>
 );
 
-const Input = ({ label, value, onChange, type = 'text', className = '', step }) => (
+const Input = ({ label, value, onChange, type = 'text', className = '', step, min, max }) => (
   <div className={className}>
     <label className="text-sm font-medium text-secondary-700">{label}</label>
-    <input type={type} step={step} className="input-field mt-1" value={value} onChange={(e)=>onChange(e.target.value)} />
+    <input type={type} step={step} min={min} max={max} className="input-field mt-1" value={value} onChange={(e)=>onChange(e.target.value)} />
   </div>
 );
 

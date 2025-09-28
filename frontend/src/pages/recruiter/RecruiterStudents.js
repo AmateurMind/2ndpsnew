@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { Search, Filter, GraduationCap } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Search, Filter, GraduationCap, Bookmark, CheckCircle2 } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const RecruiterStudents = () => {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [filters, setFilters] = useState({ department: '', cgpa: '', skills: '' });
+  const [shortlist, setShortlist] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('recruiter_shortlist') || '[]'); } catch { return []; }
+  });
+  const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -39,6 +44,21 @@ const RecruiterStudents = () => {
 
   const departments = Array.from(new Set(students.map(s => s.department).filter(Boolean)));
 
+  const toggleShortlist = (id) => {
+    setShortlist(prev => {
+      const exists = prev.includes(id);
+      const next = exists ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem('recruiter_shortlist', JSON.stringify(next));
+      toast.success(exists ? 'Removed from shortlist' : 'Added to shortlist');
+      return next;
+    });
+  };
+
+  const visibleStudents = useMemo(() => {
+    const base = students;
+    return showShortlistOnly ? base.filter(s => shortlist.includes(s.id)) : base;
+  }, [students, shortlist, showShortlistOnly]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -46,6 +66,13 @@ const RecruiterStudents = () => {
       </div>
 
       <div className="card p-4 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-secondary-700">Filters</div>
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" className="accent-primary-600" checked={showShortlistOnly} onChange={(e)=>setShowShortlistOnly(e.target.checked)} />
+            Show shortlist only
+          </label>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="text-sm font-medium">Department</label>
@@ -73,7 +100,7 @@ const RecruiterStudents = () => {
         <div className="min-h-[40vh] flex items-center justify-center"><LoadingSpinner size="large" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {students.map(s => (
+          {visibleStudents.map(s => (
             <div key={s.id} className="card p-4">
               <div className="flex items-center gap-3">
                 {s.profilePicture ? (
@@ -93,9 +120,15 @@ const RecruiterStudents = () => {
                   <span key={skill} className="px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs">{skill}</span>
                 ))}
               </div>
-              {s.resumeLink && (
-                <a href={s.resumeLink} target="_blank" rel="noreferrer" className="btn-outline mt-3 text-sm">View Resume</a>
-              )}
+              <div className="mt-3 flex items-center gap-2">
+                <button onClick={()=>toggleShortlist(s.id)} className="btn-outline text-sm flex items-center">
+{shortlist.includes(s.id) ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Bookmark className="h-4 w-4 mr-1" />}
+                  {shortlist.includes(s.id) ? 'Shortlisted' : 'Shortlist'}
+                </button>
+                {s.resumeLink && (
+                  <a href={s.resumeLink} target="_blank" rel="noreferrer" className="btn-secondary text-sm">View Resume</a>
+                )}
+              </div>
             </div>
           ))}
         </div>
