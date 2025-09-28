@@ -34,9 +34,7 @@ const Navbar = () => {
         { path: '/student/profile', label: 'Profile', icon: User },
       ],
       mentor: [
-        { path: '/mentor/dashboard', label: 'Dashboard', icon: BarChart3 },
-        { path: '/mentor/applications', label: 'Applications', icon: FileText },
-        { path: '/mentor/students', label: 'Students', icon: Users },
+        { path: '/mentor/dashboard', label: 'Dashboard', icon: BarChart3 }
       ],
       admin: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
@@ -16,6 +16,7 @@ import AdminInternships from './pages/admin/AdminInternships';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import RecruiterDashboard from './pages/recruiter/RecruiterDashboard';
+import RecruiterStudents from './pages/recruiter/RecruiterStudents';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Context for authentication
@@ -101,6 +102,10 @@ function AppContent() {
           <Route 
             path="/recruiter/dashboard" 
             element={<ProtectedRoute role="recruiter"><RecruiterDashboard /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/recruiter/students" 
+            element={<ProtectedRoute role="recruiter"><RecruiterStudents /></ProtectedRoute>} 
           />
           
           {/* Default redirects */}

@@ -7,18 +7,23 @@ const router = express.Router();
 
 const applicationsPath = path.join(__dirname, '../data/applications.json');
 const internshipsPath = path.join(__dirname, '../data/internships.json');
+const mentorsPath = path.join(__dirname, '../data/mentors.json');
+const studentsPath = path.join(__dirname, '../data/students.json');
 
 // Helper functions
 const readApplications = () => JSON.parse(fs.readFileSync(applicationsPath, 'utf8'));
 const writeApplications = (applications) => fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
 const readInternships = () => JSON.parse(fs.readFileSync(internshipsPath, 'utf8'));
 const writeInternships = (internships) => fs.writeFileSync(internshipsPath, JSON.stringify(internships, null, 2));
+const readMentors = () => JSON.parse(fs.readFileSync(mentorsPath, 'utf8'));
+const readStudents = () => JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
 
 // Get applications based on user role
 router.get('/', authenticate, (req, res) => {
   try {
     const applications = readApplications();
     const internships = readInternships();
+    const students = readStudents();
     
     let filteredApplications = [];
     
@@ -40,13 +45,25 @@ router.get('/', authenticate, (req, res) => {
     // Enrich with internship and student data
     const enrichedApplications = filteredApplications.map(app => {
       const internship = internships.find(i => i.id === app.internshipId);
+      const student = students.find(s => s.id === app.studentId);
       return {
         ...app,
         internship: internship ? {
+          id: internship.id,
           title: internship.title,
           company: internship.company,
           location: internship.location,
-          stipend: internship.stipend
+          stipend: internship.stipend,
+          duration: internship.duration,
+        } : null,
+        student: student ? {
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          resumeLink: student.resumeLink,
+          department: student.department,
+          cgpa: student.cgpa,
+          semester: student.semester,
         } : null
       };
     });
@@ -91,6 +108,7 @@ router.post('/', authenticate, authorize('student'), (req, res) => {
   try {
     const applications = readApplications();
     const internships = readInternships();
+    const mentors = readMentors();
     const { internshipId, coverLetter, mentorId } = req.body;
     
     if (!internshipId || !coverLetter) {
@@ -119,15 +137,23 @@ router.post('/', authenticate, authorize('student'), (req, res) => {
     if (!isEligible) {
       return res.status(400).json({ error: 'You are not eligible for this internship' });
     }
+
+    // Determine mentor assignment
+    let assignedMentorId = mentorId || null;
+    if (!assignedMentorId) {
+      // Auto-assign a mentor from the same department if available, otherwise first mentor
+      const deptMentor = mentors.find(m => m.department === req.user.department);
+      assignedMentorId = deptMentor ? deptMentor.id : (mentors[0] ? mentors[0].id : null);
+    }
     
     const newApplication = {
       id: `APP${String(applications.length + 1).padStart(3, '0')}`,
       studentId: req.user.id,
       internshipId,
-      status: mentorId ? 'pending_mentor_approval' : 'applied',
+      status: assignedMentorId ? 'pending_mentor_approval' : 'applied',
       appliedAt: new Date().toISOString(),
       coverLetter,
-      mentorId: mentorId || null,
+      mentorId: assignedMentorId,
       mentorApproval: null,
       mentorFeedback: null,
       interviewScheduled: null,
@@ -218,9 +244,34 @@ router.put('/:id/status', authenticate, authorize('mentor', 'admin'), (req, res)
 router.get('/pending/mentor', authenticate, authorize('mentor'), (req, res) => {
   try {
     const applications = readApplications();
+    const internships = readInternships();
+    const students = readStudents();
     const pendingApplications = applications.filter(app => 
       app.mentorId === req.user.id && app.status === 'pending_mentor_approval'
-    );
+    ).map(app => {
+      const internship = internships.find(i => i.id === app.internshipId);
+      const student = students.find(s => s.id === app.studentId);
+      return {
+        ...app,
+        internship: internship ? {
+          id: internship.id,
+          title: internship.title,
+          company: internship.company,
+          location: internship.location,
+          stipend: internship.stipend,
+          duration: internship.duration,
+        } : null,
+        student: student ? {
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          resumeLink: student.resumeLink,
+          department: student.department,
+          cgpa: student.cgpa,
+          semester: student.semester,
+        } : null
+      };
+    });
     
     res.json({
       applications: pendingApplications,

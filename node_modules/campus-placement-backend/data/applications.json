@@ -3,16 +3,16 @@
     "id": "APP001",
     "studentId": "STU001",
     "internshipId": "INT001",
-    "status": "pending_mentor_approval",
+    "status": "rejected",
     "appliedAt": "2024-03-15T10:30:00.000Z",
     "coverLetter": "I am excited to apply for the Frontend Development Intern position. My experience with React and JavaScript makes me a perfect fit for this role.",
     "mentorId": "MEN001",
-    "mentorApproval": null,
-    "mentorFeedback": null,
+    "mentorApproval": "rejected",
+    "mentorFeedback": "",
     "interviewScheduled": null,
     "interviewFeedback": null,
     "finalStatus": null,
-    "updatedAt": "2024-03-15T10:30:00.000Z"
+    "updatedAt": "2025-09-28T06:17:25.781Z"
   },
   {
     "id": "APP002",
@@ -124,5 +124,20 @@
     "interviewFeedback": null,
     "finalStatus": null,
     "updatedAt": "2025-09-28T06:00:53.812Z"
+  },
+  {
+    "id": "APP008",
+    "studentId": "STU001",
+    "internshipId": "INT005",
+    "status": "approved",
+    "appliedAt": "2025-09-28T06:18:21.685Z",
+    "coverLetter": "asd",
+    "mentorId": "MEN001",
+    "mentorApproval": "approved",
+    "mentorFeedback": "",
+    "interviewScheduled": null,
+    "interviewFeedback": null,
+    "finalStatus": null,
+    "updatedAt": "2025-09-28T06:18:32.047Z"
   }
 ]
